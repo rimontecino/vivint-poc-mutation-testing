@@ -73,4 +73,3 @@ steps:
   displayName: 'Publish Mutation Test Report'
   inputs:
     reportPattern: '**/mutation-report.html'
-    reportDisplayName: 'Stryker Report'
