@@ -41,7 +41,7 @@ steps:
   displayName: 'Restore dotnet tools (coverlet, stryker)'
 
 # 4) Run Stryker from the TEST PROJECT folder
-- script: dotnet stryker --reporter "html;dashboard"
+- script: dotnet stryker
   workingDirectory: $(Build.SourcesDirectory)/MutationTesting.Tests
   displayName: 'Run Stryker (HTML + Dashboard)'
   env:
