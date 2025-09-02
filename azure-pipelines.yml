@@ -8,14 +8,14 @@ variables:
   buildConfiguration: 'Release'
 
 steps:
-# 1) Ensure .NET 8 SDK is on the agent
+# Ensure .NET 8 SDK is on the agent
 - task: UseDotNet@2
   displayName: 'Install .NET 8 SDK'
   inputs:
     packageType: 'sdk'
     version: '8.x'
 
-# 2) Restore / Build / Test using the .NET SDK tasks
+# Restore / Build / Test using the .NET SDK tasks
 - task: DotNetCoreCLI@2
   displayName: 'Restore'
   inputs:
@@ -36,20 +36,33 @@ steps:
     projects: 'MutationTesting.Tests/MutationTesting.Tests.csproj'
     arguments: '--configuration $(buildConfiguration) --no-build'
 
-# 3) Make Stryker available (reads .config/dotnet-tools.json)
+# Make Stryker available (reads .config/dotnet-tools.json)
 - script: dotnet tool restore
   displayName: 'Restore dotnet tools (coverlet, stryker)'
 
-# 4) Run Stryker from the TEST PROJECT folder
+# Run Stryker from the TEST PROJECT folder
 - script: dotnet stryker
   workingDirectory: $(Build.SourcesDirectory)/MutationTesting.Tests
   displayName: 'Run Stryker (HTML + Dashboard)'
   env:
     STRYKER_DASHBOARD_API_KEY: $(STRYKER_DASHBOARD_API_KEY)
 
-# 5) Publish the HTML mutation report as an artifact
+# List the tree so we can see the exact folder in logs
+- pwsh: |
+    Get-ChildItem -Recurse "$(Build.SourcesDirectory)/MutationTesting.Tests/StrykerOutput" | Select-Object FullName
+  displayName: 'List StrykerOutput tree'
+
+# Copy all report files to a known staging folder
+- task: CopyFiles@2
+  displayName: 'Stage Stryker HTML report'
+  inputs:
+    SourceFolder: '$(Build.SourcesDirectory)/MutationTesting.Tests'
+    Contents: 'StrykerOutput/**/reports/**'
+    TargetFolder: '$(Build.ArtifactStagingDirectory)/stryker-report'
+
+# Publish the HTML mutation report as an artifact
 - task: PublishBuildArtifacts@1
   displayName: 'Publish Stryker HTML report'
   inputs:
-    PathtoPublish: '$(Build.SourcesDirectory)/MutationTesting.Tests/StrykerOutput/**/reports'
+    PathtoPublish: '$(Build.ArtifactStagingDirectory)/stryker-report'
     ArtifactName: 'stryker-report'
