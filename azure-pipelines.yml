@@ -57,21 +57,7 @@ steps:
     }
   displayName: 'List StrykerOutput tree'
 
-# 6) Copy all report files to a known staging folder
-- task: CopyFiles@2
-  displayName: 'Stage Stryker HTML report'
-  inputs:
-    SourceFolder: '$(Build.SourcesDirectory)/MutationTesting.Tests'
-    Contents: 'StrykerOutput/**/reports/**'
-    TargetFolder: '$(Build.ArtifactStagingDirectory)/stryker-report'
-
-# 7) Publish the HTML mutation report as a downloadable artifact
-- task: PublishBuildArtifacts@1
-  displayName: 'Publish Stryker HTML report'
-  inputs:
-    PathtoPublish: '$(Build.ArtifactStagingDirectory)/stryker-report'
-    ArtifactName: 'stryker-report'
-
+# 6) Publish the mutation test report
 - task: PublishMutationReport@2
   displayName: 'Publish Mutation Test Report'
   inputs:
