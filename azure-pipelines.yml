@@ -31,3 +31,9 @@ steps:
   inputs:
     platform: '$(buildPlatform)'
     configuration: '$(buildConfiguration)'
+
+- task: run-stryker@1
+  displayName: 'Run mutations'
+  inputs:
+    testProject: '*Tests.csproj'
+    parameters: --reporters "['html', 'dashboard']" --dashboard-api-key $(STRYKER_DASHBOARD_API_KEY) -project github.com/$(Build.Repository.Name) -version $(Build.SourceBranchName)
