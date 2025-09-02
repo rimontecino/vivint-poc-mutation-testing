@@ -1,5 +1,8 @@
-{ "stryker-config": {
-    "reporters": ["progress","html","dashboard"],
-    "dashboard": { "project": "github.com/rimontecino/vivint-poc-mutation-testing",
-                   "version": "branch" }
-}}
+{
+  "stryker-config": {
+    "reporters": ["progress", "html", "dashboard"],
+    "thresholds": { "high": 80, "low": 60, "break": 0 },
+    "project": "github.com/rimontecino/vivint-poc-mutation-testing",
+    "dashboard-url": "https://dashboard.stryker-mutator.io"
+  }
+}
