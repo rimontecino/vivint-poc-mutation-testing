@@ -1,8 +1,3 @@
-# .NET Desktop
-# Build and run tests for .NET Desktop or Windows classic desktop solutions.
-# Add steps that publish symbols, save build artifacts, and more:
-# https://docs.microsoft.com/azure/devops/pipelines/apps/windows/dot-net
-
 trigger:
 - main
 
@@ -10,11 +5,16 @@ pool:
   vmImage: 'windows-latest'
 
 variables:
-  solution: '**/*.sln'
+  solution: 'MutationTesting.sln'
   buildPlatform: 'Any CPU'
   buildConfiguration: 'Release'
 
 steps:
+- task: UseDotNet@2
+  inputs:
+    packageType: 'sdk'
+    version: '8.x'
+
 - task: NuGetToolInstaller@1
 
 - task: NuGetCommand@2
@@ -32,8 +32,21 @@ steps:
     platform: '$(buildPlatform)'
     configuration: '$(buildConfiguration)'
 
-- task: run-stryker@1
-  displayName: 'Run mutations (HTML + Dashboard)'
+# Install dotnet-stryker from the tool manifest
+- script: dotnet tool restore
+  displayName: 'Restore dotnet tools (dotnet-stryker)'
+
+# Run Stryker in the test project directory
+- script: dotnet stryker
+  workingDirectory: $(Build.SourcesDirectory)/MutationTesting.Tests
+  displayName: 'Run Stryker (HTML + Dashboard)'
+  env:
+    STRYKER_DASHBOARD_API_KEY: $(STRYKER_DASHBOARD_API_KEY)
+
+# Publish HTML mutation report
+- task: PublishBuildArtifacts@1
+  displayName: 'Publish Stryker HTML report'
   inputs:
-    testProject: '*Tests.csproj'
-    parameters: --reporter html --reporter dashboard --dashboard-api-key $(STRYKER_DASHBOARD_API_KEY) --project github.com/$(Build.Repository.Name) --version $(Build.SourceBranchName)
+    PathtoPublish: '$(Build.SourcesDirectory)/MutationTesting.Tests/StrykerOutput/**/reports'
+    ArtifactName: 'stryker-report'
+    publishLocation: 'Container'
