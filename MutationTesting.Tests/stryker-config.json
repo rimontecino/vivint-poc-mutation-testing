@@ -1,0 +1,5 @@
+{ "stryker-config": {
+    "reporters": ["progress","html","dashboard"],
+    "dashboard": { "project": "github.com/rimontecino/vivint-poc-mutation-testing",
+                   "version": "branch" }
+}}
