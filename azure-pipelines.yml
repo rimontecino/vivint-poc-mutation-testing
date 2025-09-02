@@ -43,21 +43,9 @@ steps:
 # 4) Run Stryker from the TEST PROJECT folder
 - script: dotnet stryker
   workingDirectory: $(Build.SourcesDirectory)/MutationTesting.Tests
-  displayName: 'Run Stryker (HTML + Dashboard)'
-  env:
-    STRYKER_DASHBOARD_API_KEY: $(STRYKER_DASHBOARD_API_KEY)
+  displayName: 'Run Stryker HTML'
 
-# 5) List the tree so we can see the exact folder in logs (for debugging)
-- pwsh: |
-    $p = "$(Build.SourcesDirectory)/MutationTesting.Tests/StrykerOutput"
-    if (Test-Path $p) {
-      Get-ChildItem -Recurse $p | Select-Object FullName
-    } else {
-      Write-Host "No StrykerOutput found."
-    }
-  displayName: 'List StrykerOutput tree'
-
-# 6) Publish the mutation test report
+# 5) Publish the mutation test report
 - task: PublishMutationReport@2
   displayName: 'Publish Mutation Test Report'
   inputs:
