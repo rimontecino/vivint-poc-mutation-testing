@@ -47,10 +47,14 @@ steps:
   env:
     STRYKER_DASHBOARD_API_KEY: $(STRYKER_DASHBOARD_API_KEY)
 
-# 5) List the tree so we can see the exact folder in logs (won’t fail if missing)
+# 5) List the tree so we can see the exact folder in logs (for debugging)
 - pwsh: |
     $p = "$(Build.SourcesDirectory)/MutationTesting.Tests/StrykerOutput"
-    if (Test-Path $p) { Get-ChildItem -Recurse $p | Select-Object FullName } else { Write-Host "No StrykerOutput found." }
+    if (Test-Path $p) {
+      Get-ChildItem -Recurse $p | Select-Object FullName
+    } else {
+      Write-Host "No StrykerOutput found."
+    }
   displayName: 'List StrykerOutput tree'
 
 # 6) Copy all report files to a known staging folder
@@ -61,15 +65,33 @@ steps:
     Contents: 'StrykerOutput/**/reports/**'
     TargetFolder: '$(Build.ArtifactStagingDirectory)/stryker-report'
 
-# 7a) Publish the HTML mutation report as a build artifact
+# 7) Publish the HTML mutation report as a downloadable artifact
 - task: PublishBuildArtifacts@1
   displayName: 'Publish Stryker HTML report'
   inputs:
     PathtoPublish: '$(Build.ArtifactStagingDirectory)/stryker-report'
     ArtifactName: 'stryker-report'
 
-# 7b) Also show it inline in the build summary tab (requires extension)
-- task: PublishMutationReport@1
-  displayName: 'Publish Mutation Test Report'
-  inputs:
-    reportPattern: '**/mutation-report.html'
+# 8) Bulletproof fallback: add a Markdown summary with links
+- pwsh: |
+    $root = "$(Build.SourcesDirectory)/MutationTesting.Tests/StrykerOutput"
+    if (!(Test-Path $root)) {
+      Write-Host "No StrykerOutput found"; exit 0
+    }
+    $latest = Get-ChildItem -Path $root -Directory | Sort-Object LastWriteTime -Descending | Select-Object -First 1
+    $reportHtml = Join-Path $latest.FullName "reports/mutation-report.html"
+
+    $summary = @"
+# Mutation Testing Report
+
+- **Report folder:** `$($latest.FullName)`
+- **How to view:** Download the **stryker-report** artifact from this build and open `mutation-report.html`.
+- **Dashboard:** https://dashboard.stryker-mutator.io/projects/github.com/rimontecino/vivint-poc-mutation-testing
+"@
+
+    $summaryPath = "$(Build.ArtifactStagingDirectory)/stryker-summary.md"
+    $summary | Out-File -FilePath $summaryPath -Encoding UTF8
+
+    # Attach markdown as a Build Summary tab
+    Write-Host "##vso[task.addattachment type=Distributedtask.Core.Summary;name=Mutation Test Summary;]$summaryPath"
+  displayName: 'Add Mutation Test Summary'
