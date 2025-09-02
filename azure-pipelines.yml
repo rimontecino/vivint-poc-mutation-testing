@@ -71,3 +71,8 @@ steps:
   inputs:
     PathtoPublish: '$(Build.ArtifactStagingDirectory)/stryker-report'
     ArtifactName: 'stryker-report'
+
+- task: PublishMutationReport@1
+  displayName: 'Publish Mutation Test Report'
+  inputs:
+    reportPattern: '**/mutation-report.html'
