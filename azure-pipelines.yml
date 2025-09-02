@@ -71,27 +71,3 @@ steps:
   inputs:
     PathtoPublish: '$(Build.ArtifactStagingDirectory)/stryker-report'
     ArtifactName: 'stryker-report'
-
-# 8) Bulletproof fallback: add a Markdown summary with links
-- pwsh: |
-    $root = "$(Build.SourcesDirectory)/MutationTesting.Tests/StrykerOutput"
-    if (!(Test-Path $root)) {
-      Write-Host "No StrykerOutput found"; exit 0
-    }
-    $latest = Get-ChildItem -Path $root -Directory | Sort-Object LastWriteTime -Descending | Select-Object -First 1
-    $reportHtml = Join-Path $latest.FullName "reports/mutation-report.html"
-
-    $summary = @"
-# Mutation Testing Report
-
-- **Report folder:** `$($latest.FullName)`
-- **How to view:** Download the **stryker-report** artifact from this build and open `mutation-report.html`.
-- **Dashboard:** https://dashboard.stryker-mutator.io/projects/github.com/rimontecino/vivint-poc-mutation-testing
-"@
-
-    $summaryPath = "$(Build.ArtifactStagingDirectory)/stryker-summary.md"
-    $summary | Out-File -FilePath $summaryPath -Encoding UTF8
-
-    # Attach markdown as a Build Summary tab
-    Write-Host "##vso[task.addattachment type=Distributedtask.Core.Summary;name=Mutation Test Summary;]$summaryPath"
-  displayName: 'Add Mutation Test Summary'
