@@ -69,7 +69,8 @@ steps:
     ArtifactName: 'stryker-report'
 
 # 7b) Also show it inline in the build summary tab (requires extension)
-- task: MutationReportPublisher@2
+- task: PublishMutationReport@1
   displayName: 'Publish Mutation Test Report'
   inputs:
     reportPattern: '**/mutation-report.html'
+    reportDisplayName: 'Stryker Report'
