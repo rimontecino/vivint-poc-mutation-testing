@@ -8,14 +8,14 @@ variables:
   buildConfiguration: 'Release'
 
 steps:
-# Ensure .NET 8 SDK is on the agent
+# 1) Ensure .NET 8 SDK is on the agent
 - task: UseDotNet@2
   displayName: 'Install .NET 8 SDK'
   inputs:
     packageType: 'sdk'
     version: '8.x'
 
-# Restore / Build / Test using the .NET SDK tasks
+# 2) Restore / Build / Test using the .NET SDK tasks
 - task: DotNetCoreCLI@2
   displayName: 'Restore'
   inputs:
@@ -36,23 +36,24 @@ steps:
     projects: 'MutationTesting.Tests/MutationTesting.Tests.csproj'
     arguments: '--configuration $(buildConfiguration) --no-build'
 
-# Make Stryker available (reads .config/dotnet-tools.json)
+# 3) Make Stryker available (reads .config/dotnet-tools.json)
 - script: dotnet tool restore
   displayName: 'Restore dotnet tools (coverlet, stryker)'
 
-# Run Stryker from the TEST PROJECT folder
-- script: dotnet stryker
+# 4) Run Stryker from the TEST PROJECT folder
+- script: dotnet stryker --reporter "html;dashboard"
   workingDirectory: $(Build.SourcesDirectory)/MutationTesting.Tests
   displayName: 'Run Stryker (HTML + Dashboard)'
   env:
     STRYKER_DASHBOARD_API_KEY: $(STRYKER_DASHBOARD_API_KEY)
 
-# List the tree so we can see the exact folder in logs
+# 5) List the tree so we can see the exact folder in logs (won’t fail if missing)
 - pwsh: |
-    Get-ChildItem -Recurse "$(Build.SourcesDirectory)/MutationTesting.Tests/StrykerOutput" | Select-Object FullName
+    $p = "$(Build.SourcesDirectory)/MutationTesting.Tests/StrykerOutput"
+    if (Test-Path $p) { Get-ChildItem -Recurse $p | Select-Object FullName } else { Write-Host "No StrykerOutput found." }
   displayName: 'List StrykerOutput tree'
 
-# Copy all report files to a known staging folder
+# 6) Copy all report files to a known staging folder
 - task: CopyFiles@2
   displayName: 'Stage Stryker HTML report'
   inputs:
@@ -60,9 +61,15 @@ steps:
     Contents: 'StrykerOutput/**/reports/**'
     TargetFolder: '$(Build.ArtifactStagingDirectory)/stryker-report'
 
-# Publish the HTML mutation report as an artifact
+# 7a) Publish the HTML mutation report as a build artifact
 - task: PublishBuildArtifacts@1
   displayName: 'Publish Stryker HTML report'
   inputs:
     PathtoPublish: '$(Build.ArtifactStagingDirectory)/stryker-report'
     ArtifactName: 'stryker-report'
+
+# 7b) Also show it inline in the build summary tab (requires extension)
+- task: PublishMutationReport@1
+  displayName: 'Publish Mutation Test Report'
+  inputs:
+    reportPattern: '**/mutation-report.html'
